@@ -1,3 +1,5 @@
+CREATE DATABASE IF NOT EXISTS novaharvest;
+USE novaharvest;
 -- 1. Creación de la tabla excedentes
 CREATE TABLE IF NOT EXISTS excedentes (
     id INT AUTO_INCREMENT PRIMARY KEY,
