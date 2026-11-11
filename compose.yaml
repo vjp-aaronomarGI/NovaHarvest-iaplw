@@ -1,6 +1,6 @@
 services:
   web:
-    image: nginx:alpine
+    image: nginx:1.27-alpine
     ports:
       - "8080:80"
       - "8443:443"
@@ -10,10 +10,9 @@ services:
       - ./nginx/certs:/etc/nginx/certs:ro
     depends_on:
       - php
+
   php:
     build: ./php
-    env_file:
-      - .env
     environment:
       DB_HOST: db
       DB_NAME: ${DB_NAME}
@@ -22,32 +21,28 @@ services:
     volumes:
       - ./web:/usr/share/nginx/html
       - ./php/www.conf:/usr/local/etc/php-fpm.d/www.conf:ro
-      - ./php/php.ini:/usr/local/etc/php/conf.d/php.ini:ro
+      - ./php/php.ini:/usr/local/etc/php/conf.d/novaharvest.ini:ro
     depends_on:
       db:
         condition: service_healthy
 
   db:
-    image: mariadb:latest
-    env_file:
-      - .env
+    image: mariadb:11
     environment:
       MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MARIADB_DATABASE: ${DB_NAME}
       MARIADB_USER: ${DB_USER}
       MARIADB_PASSWORD: ${DB_PASS}
     volumes:
-      - db_data:/var/lib/mysql
-      - ./db/novaharvest.sql:/docker-entrypoint-initdb.d/novaharvest.sql:ro
+      - dbdata:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-u${DB_USER}", "-p${DB_PASS}"]
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   adminer:
-    image: adminer:latest
-    restart: always
+    image: adminer:5
     ports:
       - "127.0.0.1:8081:8080"
     environment:
@@ -56,6 +51,5 @@ services:
       db:
         condition: service_healthy
 
-
 volumes:
-  db_data:
+  dbdata:
